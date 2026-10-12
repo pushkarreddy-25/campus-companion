@@ -72,9 +72,9 @@ const validateDist = () => {
   const forbidden = [
     { file: 'config.js', text: '<PASTE URL>' },
     { file: 'config.js', text: '<PASTE ANON KEY>' },
-    { file: 'privacy.html', text: '[pushkarkarri767@gmail.com]' },
-    { file: 'privacy.html', text: '[Pushkar Reddy]' },
-    { file: 'terms.html', text: '[pushkarkarri767@gmail.com]' }
+    { file: 'privacy.html', text: '[CONTACT EMAIL]' },
+    { file: 'privacy.html', text: '[APP OWNER NAME]' },
+    { file: 'terms.html', text: '[CONTACT EMAIL]' }
   ];
   forbidden.forEach(({ file, text }) => {
     const filePath = path.join(dist, file);
