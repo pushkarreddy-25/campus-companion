@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Campus Companion</title>
+    <meta
+      name="description"
+      content="Campus Companion helps students track attendance and discover academic resources in one place."
+    />
+    <meta name="theme-color" content="#315efb" />
+    <link rel="manifest" href="manifest.webmanifest" />
+    <link rel="icon" href="favicon.svg" type="image/svg+xml" />
+    <link rel="alternate icon" href="favicon.ico" type="image/x-icon" />
+    <link rel="apple-touch-icon" href="icon-192.png" />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <section id="authScreen" class="onboarding-overlay hidden" aria-label="Account login">
+      <div class="panel onboarding-card">
+        <p class="eyebrow success">Campus Companion</p>
+        <h2>Sign in to your dashboard</h2>
+        <p class="intro-text">Log in to view your private attendance records and saved timetable. Use offline mode to keep data only in this browser.</p>
+        <form id="authForm" class="onboarding-form">
+          <div class="field-group">
+            <label for="authEmail">Email</label>
+            <input id="authEmail" name="email" type="email" autocomplete="email" required />
+          </div>
+          <div class="field-group">
+            <label for="authPassword">Password</label>
+            <input id="authPassword" name="password" type="password" autocomplete="current-password" minlength="6" />
+          </div>
+          <div class="button-row-wrap">
+            <button type="submit" class="primary-btn" data-auth-action="login">Log in</button>
+            <button type="submit" class="secondary-btn" data-auth-action="signup">Sign up</button>
+            <button type="submit" class="secondary-btn" data-auth-action="forgot">Forgot password?</button>
+          </div>
+          <button type="button" id="continueOfflineBtn" class="action-btn secondary full-width-btn">Continue offline (save on this device)</button>
+          <p id="authFeedback" class="feedback-msg hidden"></p>
+          <p class="legal-consent">By signing up you agree to the <a href="terms.html">Terms</a> and <a href="privacy.html">Privacy Policy</a>.</p>
+        </form>
+      </div>
+    </section>
+    <!-- Onboarding Modal for First-Time Setup -->
+    <div id="onboardingModal" class="onboarding-overlay hidden">
+      <div class="panel onboarding-card">
+        <div class="panel-head">
+          <div>
+            <p class="eyebrow success">Welcome to Campus Companion</p>
+            <h2>Set up your profile</h2>
+          </div>
+        </div>
+        <p class="intro-text">
+          Enter your name, branch, semester and first subject. Then add timetable slots and mark each lecture.
+        </p>
+
+        <form id="onboardingForm" class="onboarding-form">
+          <div class="field-group">
+            <label for="onboardingName">Your Full Name</label>
+            <input id="onboardingName" name="name" type="text" placeholder="e.g. Priya Sharma" required />
+          </div>
+
+          <div class="form-grid-2">
+            <div class="field-group">
+              <label for="onboardingBranch">Branch / Department</label>
+              <input id="onboardingBranch" name="branch" type="text" placeholder="e.g. Computer Science" required />
+            </div>
+            <div class="field-group">
+              <label for="onboardingSemester">Semester</label>
+              <input id="onboardingSemester" name="semester" type="text" placeholder="e.g. Semester 4" required />
+            </div>
+          </div>
+
+          <div class="section-divider">
+            <span class="eyebrow">First Subject</span>
+          </div>
+
+          <div class="field-group">
+            <label for="onboardingSubjectName">Subject Name</label>
+            <input id="onboardingSubjectName" name="subjectName" type="text" placeholder="e.g. Data Structures" required />
+          </div>
+
+          <div class="form-grid-2">
+            <div class="field-group">
+              <label for="onboardingSubjectCode">Subject Code <span class="muted-note">(optional)</span></label>
+              <input id="onboardingSubjectCode" name="subjectCode" type="text" placeholder="e.g. CS201" maxlength="20" />
+            </div>
+            <div class="field-group">
+              <label for="onboardingSubjectTarget">Attendance Target</label>
+              <select id="onboardingSubjectTarget" name="target">
+                <option value="60">60%</option>
+                <option value="65">65%</option>
+                <option value="70">70%</option>
+                <option value="75" selected>75%</option>
+                <option value="80">80%</option>
+                <option value="85">85%</option>
+                <option value="90">90%</option>
+              </select>
+            </div>
+          </div>
+
+          <button type="submit" class="primary-btn full-width-btn">Get Started</button>
+        </form>
+      </div>
+    </div>
+
+    <div class="app-shell">
+      <header class="topbar">
+        <div class="brand-wrap">
+          <div class="logo">CC</div>
+          <div>
+            <p class="eyebrow">Student dashboard</p>
+            <h1>Campus Companion</h1>
+          </div>
+        </div>
+        <div class="button-row-wrap">
+          <span class="demo-pill" id="storageNoticePill">Browser Storage</span>
+          <span class="demo-pill" id="syncStatus" aria-live="polite">Offline, will sync later</span>
+          <button type="button" class="secondary-btn hidden" id="logoutBtn">Log out</button>
+        </div>
+      </header>
+
+      <nav class="main-nav" aria-label="Main navigation">
+        <button class="nav-item active" data-section="dashboard">Dashboard</button>
+        <button class="nav-item" data-section="attendance">Attendance</button>
+        <button class="nav-item" data-section="library">Library</button>
+        <button class="nav-item" data-section="admin">Admin</button>
+        <button class="nav-item" data-section="profile">Profile</button>
+      </nav>
+
+      <main class="main-content">
+        <section id="dashboard" class="page active" aria-label="Dashboard">
+          <div class="hero panel">
+            <div>
+              <p class="eyebrow success" id="dashboardGreeting">Welcome back</p>
+              <h2>Your semester snapshot</h2>
+            </div>
+            <div class="hero-meta">
+              <span id="dashboardStudentMeta">Student</span>
+              <span class="badge warning hidden" id="unsureBadge"></span>
+              <span class="badge warning hidden" id="pendingAlertBadge"></span>
+            </div>
+          </div>
+
+          <div class="stats-grid" id="overviewMetrics"></div>
+
+          <!-- Today's Schedule Card -->
+          <div class="panel today-card" id="todayScheduleSection">
+            <div class="panel-head">
+              <div>
+                <p class="eyebrow success" id="todayWeekdayHeader">Today's Lectures</p>
+                <h3 id="todayDateTitle">Today's Timetable</h3>
+              </div>
+              <span class="badge neutral" id="todaySlotsCountBadge">0 classes</span>
+            </div>
+            <div id="todaySlotsList" class="today-slots-list"></div>
+          </div>
+
+          <!-- Pending Lectures Section -->
+          <div class="panel pending-panel" id="pendingSection">
+            <div class="panel-head">
+              <div>
+                <p class="eyebrow warning">Action Required</p>
+                <h3>Pending Unmarked Lectures</h3>
+              </div>
+              <span class="badge warning" id="pendingCountBadge">0 pending</span>
+            </div>
+            <p class="disclaimer">Timetable lectures from the past 7 days that have no attendance entry yet.</p>
+            <div id="pendingList" class="pending-list"></div>
+          </div>
+
+          <div class="content-grid dashboard-grid">
+            <div class="panel">
+              <div class="panel-head">
+                <h3>Subject performance</h3>
+                <span class="muted-note">Student-entered records</span>
+              </div>
+              <div id="subjectCards"></div>
+            </div>
+
+            <div class="panel">
+              <div class="panel-head">
+                <h3>Weekly summary</h3>
+                <span class="muted-note">Last 7 days</span>
+              </div>
+              <div id="weeklySummary" class="weekly-summary"></div>
+            </div>
+          </div>
+        </section>
+
+        <section id="attendance" class="page" aria-label="Attendance tracker">
+          <div class="panel intro-panel">
+            <div>
+              <p class="eyebrow success">Attendance tracker</p>
+              <h2>Track your own lecture status</h2>
+            </div>
+            <p class="disclaimer">
+              This is your self-reported attendance, not official college attendance. It is not synced with any institutional system.
+            </p>
+          </div>
+
+          <div class="attendance-forms">
+            <form id="subjectForm" class="panel form-panel">
+              <div class="panel-head">
+                <h3>Add a subject</h3>
+              </div>
+              <div class="field-group">
+                <label for="subjectName">Subject name</label>
+                <input id="subjectName" name="subjectName" type="text" placeholder="e.g. Computer Networks" required />
+              </div>
+              <div class="field-group">
+                <label for="subjectCode">Subject code <span class="muted-note">(optional)</span></label>
+                <input id="subjectCode" name="subjectCode" type="text" placeholder="e.g. CS303" maxlength="20" />
+              </div>
+              <div class="field-group">
+                <label for="subjectTarget">Attendance target</label>
+                <select id="subjectTarget" name="target">
+                  <option value="60">60%</option>
+                  <option value="65">65%</option>
+                  <option value="70">70%</option>
+                  <option value="75" selected>75%</option>
+                  <option value="80">80%</option>
+                  <option value="85">85%</option>
+                  <option value="90">90%</option>
+                </select>
+              </div>
+              <button type="submit" class="primary-btn">Create subject</button>
+            </form>
+
+            <form id="timetableForm" class="panel form-panel">
+              <div class="panel-head">
+                <h3>Add a timetable slot</h3>
+              </div>
+              <div class="field-group">
+                <label for="timetableSubject">Subject</label>
+                <select id="timetableSubject" name="subjectId" required></select>
+              </div>
+              <div class="field-group">
+                <label for="timetableDay">Day of week</label>
+                <select id="timetableDay" name="day" required>
+                  <option value="monday">Monday</option>
+                  <option value="tuesday">Tuesday</option>
+                  <option value="wednesday">Wednesday</option>
+                  <option value="thursday">Thursday</option>
+                  <option value="friday">Friday</option>
+                  <option value="saturday">Saturday</option>
+                  <option value="sunday">Sunday</option>
+                </select>
+              </div>
+              <div class="field-group">
+                <label for="timetableTime">Time slot <span class="muted-note">(optional)</span></label>
+                <input id="timetableTime" name="time" type="text" placeholder="e.g. 10:00 AM - 11:00 AM" />
+              </div>
+              <button type="submit" class="primary-btn">Add slot</button>
+            </form>
+
+            <form id="attendanceForm" class="panel form-panel">
+              <div class="panel-head">
+                <h3>Record a lecture</h3>
+              </div>
+              <div class="field-group">
+                <label for="lectureSubject">Subject</label>
+                <select id="lectureSubject" name="subjectId" required></select>
+              </div>
+              <div class="field-group">
+                <label for="lectureDate">Lecture date</label>
+                <input id="lectureDate" name="date" type="date" required />
+              </div>
+              <div class="field-group">
+                <label for="lectureStatus">Status</label>
+                <select id="lectureStatus" name="status">
+                  <option value="present">Present</option>
+                  <option value="absent">Absent</option>
+                  <option value="unsure">Not sure</option>
+                  <option value="cancelled">Cancelled</option>
+                </select>
+              </div>
+              <div class="button-row">
+                <button type="submit" class="primary-btn">Save entry</button>
+                <button type="button" id="cancelEditBtn" class="secondary-btn hidden">Cancel edit</button>
+              </div>
+            </form>
+          </div>
+
+          <div class="content-grid attendance-grid">
+            <div class="panel">
+              <div class="panel-head">
+                <h3>Attendance overview</h3>
+              </div>
+              <div id="attendanceInsights" class="insight-list"></div>
+            </div>
+
+            <div class="panel">
+              <div class="panel-head">
+                <h3>Recent lecture history</h3>
+              </div>
+              <div id="attendanceHistory" class="history-list"></div>
+            </div>
+          </div>
+        </section>
+
+        <section id="library" class="page" aria-label="Academic library">
+          <div class="panel intro-panel">
+            <div class="intro-headline-row">
+              <div>
+                <p class="eyebrow success">Academic library</p>
+                <h2>Find course materials</h2>
+              </div>
+              <span class="badge success">Supabase library</span>
+            </div>
+            <p class="disclaimer">
+              Approved PDF resources are shared by students and verified by moderators.
+            </p>
+          </div>
+
+          <div class="panel filters-panel">
+            <div class="filters-row">
+              <div class="field-group fluid">
+                <label for="librarySearch">Search</label>
+                <input id="librarySearch" type="search" placeholder="Search notes, syllabus, papers..." />
+              </div>
+              <div class="field-group">
+                <label for="branchFilter">Branch</label>
+                <select id="branchFilter">
+                  <option value="all">All branches</option>
+                </select>
+              </div>
+              <div class="field-group">
+                <label for="yearFilter">Year</label>
+                <select id="yearFilter">
+                  <option value="all">All years</option>
+                </select>
+              </div>
+              <div class="field-group">
+                <label for="semesterFilter">Semester</label>
+                <select id="semesterFilter">
+                  <option value="all">All semesters</option>
+                </select>
+              </div>
+              <div class="field-group">
+                <label for="typeFilter">Resource type</label>
+                <select id="typeFilter">
+                  <option value="all">All types</option>
+                </select>
+              </div>
+              <div class="field-group">
+                <label for="subjectFilter">Subject</label>
+                <select id="subjectFilter">
+                  <option value="all">All subjects</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <div id="libraryStatus" class="feedback-msg hidden" role="status"></div>
+          <div id="libraryGrid" class="library-grid"></div>
+          <div class="attendance-forms">
+            <div class="panel form-panel">
+              <div class="panel-head">
+                <div>
+                  <p class="eyebrow success">Share a resource</p>
+                  <h3>Upload a PDF</h3>
+                </div>
+              </div>
+              <form id="resourceUploadForm" class="onboarding-form">
+                <div class="form-grid-2">
+                  <div class="field-group"><label for="resourceTitle">Title</label><input id="resourceTitle" name="title" required maxlength="200"></div>
+                  <div class="field-group"><label for="resourceBranch">Branch</label><input id="resourceBranch" name="branch" required maxlength="80"></div>
+                  <div class="field-group"><label for="resourceYear">Year</label><input id="resourceYear" name="year" required maxlength="40"></div>
+                  <div class="field-group"><label for="resourceSemester">Semester</label><input id="resourceSemester" name="semester" required maxlength="40"></div>
+                  <div class="field-group"><label for="resourceSubject">Subject</label><input id="resourceSubject" name="subject" required maxlength="120"></div>
+                  <div class="field-group"><label for="resourceType">Type</label><select id="resourceType" name="resource_type" required><option value="syllabus">Syllabus</option><option value="pyq">Previous year question paper</option><option value="lab_manual">Lab manual</option><option value="notes">Notes</option><option value="assignment">Assignment</option></select></div>
+                  <div class="field-group"><label for="resourceAcademicYear">Academic year</label><input id="resourceAcademicYear" name="academic_year" required maxlength="30"></div>
+                  <div class="field-group"><label for="resourceFile">PDF file</label><input id="resourceFile" name="file" type="file" accept="application/pdf,.pdf" required></div>
+                </div>
+                <label class="checkbox-row"><input id="resourceRights" name="rights" type="checkbox" required> I confirm I have the right to share this and it is not confidential or paid copyrighted material.</label>
+                <button type="submit" class="primary-btn">Submit for review</button>
+                <p id="resourceUploadFeedback" class="feedback-msg hidden"></p>
+              </form>
+            </div>
+            <div class="panel form-panel">
+              <div class="panel-head"><h3>My uploads</h3></div>
+              <div id="myUploadsList" class="admin-queue"></div>
+            </div>
+          </div>
+        </section>
+
+        <section id="admin" class="page" aria-label="Admin moderation">
+          <div class="panel intro-panel">
+            <div class="intro-headline-row">
+              <div>
+                <p class="eyebrow success">Moderation</p>
+                <h2>Review academic uploads</h2>
+              </div>
+              <span class="badge success">Moderator access</span>
+            </div>
+            <p class="disclaimer">
+              Only moderators can approve or reject files. Student uploads are not approved by the uploader themselves.
+            </p>
+          </div>
+
+          <div class="admin-stats" id="adminStats"></div>
+          <div id="adminQueue" class="admin-queue"></div>
+        </section>
+
+        <section id="profile" class="page" aria-label="Profile">
+          <div class="panel profile-card">
+            <div class="profile-header">
+              <div class="avatar" id="profileAvatar">ST</div>
+              <div>
+                <p class="eyebrow success">Student Profile</p>
+                <h2 id="profileNameDisplay">Student</h2>
+              </div>
+            </div>
+
+            <div class="profile-details-view">
+              <div class="profile-info-grid">
+                <div>
+                  <span class="label">Branch</span>
+                  <strong id="profileBranchDisplay">Not set</strong>
+                </div>
+                <div>
+                  <span class="label">Semester</span>
+                  <strong id="profileSemesterDisplay">Not set</strong>
+                </div>
+              </div>
+            </div>
+
+            <hr class="divider" />
+
+            <form id="profileEditForm" class="profile-edit-section">
+              <div class="panel-head">
+                <h3>Edit Profile Details</h3>
+              </div>
+              <div class="field-group">
+                <label for="profileEditName">Full Name</label>
+                <input id="profileEditName" name="name" type="text" required />
+              </div>
+              <div class="form-grid-2">
+                <div class="field-group">
+                  <label for="profileEditBranch">Branch / Department</label>
+                  <input id="profileEditBranch" name="branch" type="text" required />
+                </div>
+                <div class="field-group">
+                  <label for="profileEditSemester">Semester</label>
+                  <input id="profileEditSemester" name="semester" type="text" required />
+                </div>
+              </div>
+              <div class="button-row">
+                <button type="submit" class="primary-btn">Save profile changes</button>
+                <span id="profileFeedback" class="feedback-msg hidden">Saved!</span>
+              </div>
+            </form>
+
+            <hr class="divider" />
+
+            <div class="data-management-section">
+              <div class="panel-head">
+                <h3>Data & Backup</h3>
+              </div>
+              <p class="disclaimer">
+                Your data is stored only in this browser; clearing browser data will delete it.
+              </p>
+              <div class="button-row-wrap">
+                <button type="button" id="exportDataBtn" class="secondary-btn">Export my data</button>
+                <label for="importFileInput" class="secondary-btn file-label-btn">Import data</label>
+                <input type="file" id="importFileInput" accept=".json" class="hidden" />
+              </div>
+              <p id="dataFeedback" class="feedback-msg hidden"></p>
+            </div>
+
+            <hr class="divider" />
+
+            <div class="danger-section">
+              <div class="panel-head">
+                <h3>Danger Zone</h3>
+              </div>
+              <p class="muted-note">Resetting removes all your profile information, tracked subjects, and lecture records permanently from this browser.</p>
+              <button type="button" id="resetDataBtn" class="action-btn warn danger-btn">Reset all my data</button>
+            </div>
+          </div>
+        </section>
+      </main>
+      <footer class="app-footer">
+        <span>Campus Companion stores your data locally and can use Supabase for account sync.</span>
+        <nav aria-label="Legal">
+          <a href="privacy.html">Privacy Policy</a>
+          <a href="terms.html">Terms</a>
+        </nav>
+      </footer>
+    </div>
+
+    <script src="vendor/supabase-2.117.3.js"></script>
+    <script src="config.js"></script>
+    <script src="calc.js"></script>
+    <script src="library-utils.js"></script>
+    <script src="app.js"></script>
+    <script>
+      if (window.location.protocol === 'https:' || window.location.hostname === 'localhost') {
+        try {
+          navigator.serviceWorker.register('sw.js');
+        } catch (error) {
+          console.warn('Service worker registration failed.', error);
+        }
+      }
+    </script>
+  </body>
+</html>
